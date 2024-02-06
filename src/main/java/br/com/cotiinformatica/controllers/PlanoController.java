@@ -1,4 +1,4 @@
-package br.com.cotiinformatica.controller;
+package br.com.cotiinformatica.controllers;
 
 import java.util.List;
 import java.util.UUID;
