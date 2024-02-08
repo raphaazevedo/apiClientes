@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,6 +22,7 @@ import br.com.cotiinformatica.entities.Cliente;
 import br.com.cotiinformatica.entities.Plano;
 import br.com.cotiinformatica.repositories.ClienteRepository;
 import br.com.cotiinformatica.repositories.PlanoRepository;
+import jakarta.validation.Valid;
 
 
 @RestController
@@ -29,7 +31,7 @@ public class ClienteController {
 
 
 	@PostMapping()
-	public String post(@RequestBody ClientePostRequestDto dto) {
+	public ResponseEntity<String> post(@RequestBody @Valid ClientePostRequestDto dto) {
 
 
 		try {
@@ -47,7 +49,9 @@ public class ClienteController {
 			
 			//verificando se o plano não foi encontrado
 			if(plano == null)
-				throw new Exception("Plano não encontrado. Verifique o ID informado.");
+				//HTTP 400 - BAD REQUEST
+				return ResponseEntity.status(400)
+						.body("Plano não encontrado. Verifique o ID informado.");
 				
 			//associar o plano ao cliente
 			cliente.setPlano(plano);
@@ -56,15 +60,20 @@ public class ClienteController {
 			ClienteRepository clienteRepository = new ClienteRepository();
 			clienteRepository.insert(cliente);
 			
-			return "Cliente cadastrado com sucesso.";
+			//HTTP 201 - CREATED
+			return ResponseEntity.status(201)
+					.body("Cliente cadastrado com sucesso.");
 		}
 		catch(Exception e) {
-			return e.getMessage();
+			
+			//HTTP 500 - INTERNAL SERVER ERROR
+			return ResponseEntity.status(500)
+					.body(e.getMessage());
 		}
 	}
 	
 	@PutMapping()
-	public String put(@RequestBody ClientePutRequestDto dto) {
+	public ResponseEntity<String> put(@RequestBody @Valid ClientePutRequestDto dto) {
 
 
 		try {
@@ -75,7 +84,8 @@ public class ClienteController {
 			
 			//verificar se o cliente não foi encontrado
 			if(cliente == null)
-				throw new Exception("Cliente não encontrado. Verifique o ID informado.");
+				return ResponseEntity.status(400) //HTTP 400 - BAD REQUEST
+						.body("Cliente não encontrado. Verifique o ID informado.");
 			
 			//consultar o plano no banco de dados através do ID
 			PlanoRepository planoRepository = new PlanoRepository();
@@ -83,7 +93,8 @@ public class ClienteController {
 			
 			//verificar se o plano não foi encontrado
 			if(plano == null)
-				throw new Exception("Plano não encontrado. Verifique o ID informado.");
+				return ResponseEntity.status(400) //HTTP 400 - BAD REQUEST
+						.body("Plano não encontrado. Verifique o ID informado.");
 			
 			//modificando os dados do cliente
 			cliente.setNome(dto.getNome());
@@ -95,15 +106,20 @@ public class ClienteController {
 			//atualizar o cliente no banco de dados
 			clienteRepository.update(cliente);
 			
-			return "Cliente atualizado com sucesso.";
+			//HTTP 200 - OK
+			return ResponseEntity.status(200)
+					.body("Cliente atualizado com sucesso.");
 		}
 		catch(Exception e) {
-			return e.getMessage();
+			
+			//HTTP 500 - INTERNAL SERVER ERROR
+			return ResponseEntity.status(500)
+					.body(e.getMessage());
 		}
 	}
 	
 	@DeleteMapping("{id}")
-	public String delete(@PathVariable("id") UUID id) {
+	public ResponseEntity<String> delete(@PathVariable("id") UUID id) {
 
 
 		try {
@@ -114,31 +130,67 @@ public class ClienteController {
 			
 			//verificando se o cliente não foi encontrado
 			if(cliente == null)
-				throw new Exception("Cliente não encontrado. Verifique o ID informado.");
+				//HTTP 400 - BAD REQUEST
+				return ResponseEntity.status(400)
+						.body("Cliente não encontrado. Verifique o ID informado.");
 			
 			//excluindo o cliente
 			clienteRepository.delete(cliente);
 			
-			return "Cliente excluído com sucesso.";
+			//HTTP 200 - OK
+			return ResponseEntity.status(200)
+					.body("Cliente excluído com sucesso.");
 		}
 		catch(Exception e) {
-			return e.getMessage();
+			//HTTP 500 - INTERNAL SERVER ERROR
+			return ResponseEntity.status(500)
+					.body(e.getMessage());
 		}
 	}
 	
 	@GetMapping()
-	public List<Cliente> getAll() throws Exception {
+	public ResponseEntity<List<Cliente>> getAll() throws Exception {
 
 
-		ClienteRepository clienteRepository = new ClienteRepository();
-		return clienteRepository.findAll();
+		try {
+			
+			ClienteRepository clienteRepository = new ClienteRepository();
+			List<Cliente> clientes = clienteRepository.findAll();
+			
+			if(clientes.size() == 0) //se a lista está vazia
+				//HTTP 204 - NO CONTENT
+				return ResponseEntity.status(204).body(null);
+			
+			//HTTP 200 - OK
+			return ResponseEntity.status(200)
+					.body(clientes);
+		}
+		catch(Exception e) {
+			//HTTP 500 - INTERNAL SERVER ERROR
+			return ResponseEntity.status(500).body(null);
+		}
 	}
 	
 	@GetMapping("{id}")
-	public Cliente getById(@PathVariable("id") UUID id) throws Exception {
+	public ResponseEntity<Cliente> getById(@PathVariable("id") UUID id) throws Exception {
 		
-		ClienteRepository clienteRepository = new ClienteRepository();
-		return clienteRepository.findById(id);
+		try {
+			
+			ClienteRepository clienteRepository = new ClienteRepository();
+			Cliente cliente = clienteRepository.findById(id);
+			
+			if(cliente == null)
+				//HTTP 204 - NO CONTENT
+				return ResponseEntity.status(204).body(null);
+			
+			//HTTP 200 - OK
+			return ResponseEntity.status(200)
+					.body(cliente);
+		}
+		catch(Exception e) {
+			//HTTP 500 - INTERNAL SERVER ERROR
+			return ResponseEntity.status(500).body(null);
+		}
 	}
 	
 }
